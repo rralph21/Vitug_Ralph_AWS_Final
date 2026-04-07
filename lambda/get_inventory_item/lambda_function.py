@@ -1,42 +1,30 @@
 import boto3
 import json
 import os
+from boto3.dynamodb.conditions import Key
 
 def lambda_handler(event, context):
-    dynamo_client = boto3.client("dynamodb")
-    table_name = os.getenv("TABLE_NAME", "InventoryApp")
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(os.getenv("TABLE_NAME", "InventoryApp"))
 
-    params = event.get("pathParameters", {})
-
-    if "id" not in params or "location_id" not in params:
+    # Validate path param
+    if "pathParameters" not in event or "id" not in event["pathParameters"]:
         return {
             "statusCode": 400,
-            "body": json.dumps("Missing 'id' or 'location_id' path parameter")
+            "body": json.dumps("Missing 'id' path parameter")
         }
 
-    item_id = params["id"]
-    location_id = params["location_id"]
+    location_id = int(event["pathParameters"]["id"])
 
     try:
-        response = dynamo_client.get_item(
-            TableName=table_name,
-            Key={
-                "id": {"S": item_id},
-                "location_id": {"N": str(location_id)}
-            }
+        response = table.query(
+            IndexName="GSI_SK_PK",
+            KeyConditionExpression=Key("location_id").eq(location_id)
         )
-
-        item = response.get("Item")
-
-        if not item:
-            return {
-                "statusCode": 404,
-                "body": json.dumps("Item not found")
-            }
 
         return {
             "statusCode": 200,
-            "body": json.dumps(item, default=str)
+            "body": json.dumps(response.get("Items", []), default=str)
         }
 
     except Exception as e:
