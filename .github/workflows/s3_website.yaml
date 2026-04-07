@@ -3,39 +3,21 @@ name: Deploy Website to S3 Bucket
 on:
   push:
     branches:
-      - main
+      - 'main'
     paths:
-      - index.html
-      - app.js
-      - .github/workflows/s3_website.yaml
-  workflow_dispatch:
-
-permissions:
-  contents: read
+      - 'index.html'
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
+      - uses: actions/checkout@v4
+      - name: Set AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
-          aws-access-key-id: ${{ secrets.ASIAQ46MIMZRM3HBY4N4 }}
-          aws-secret-access-key: ${{ secrets.6ivxKkKba0iId/yik9S11DsXSuBtxdQETKp+ckVD }}
-          aws-session-token: ${{ secrets.IQoJb3JpZ2luX2VjECAaCXVzLXdlc3QtMiJHMEUCICexNKBNmhF7+m78SPWrd2mOlzy9CxBB3/1a1ItEX7bMAiEAh5zEasBx1dvBqIbjGFTOEB1Xgi0MXoSV/O5HSl7SNQgquQII6f//////////ARADGgwwNjIxNjg1MjQzODYiDIsMkzxbl9XnsL2fFCqNAtb7YTymzTUteWFhUc0PWxDaqZ9JKDJMO3CJW7Bqbl4K7I76C7zbhyY0Gzgf3E7u15GIwSqRy8GwkpJKI8NyCsYvuqaUQzq1umF1TcKsT8cWUCRBqgWR7jtwxsFgkEr2P+n2kgK2g6PWSRLzFIUF2rOXxugazCrtPWcDbZjOuWlY/Ip4vVO0tYxZqnx753KBNQCq48LRAIl5vru0EuoihUoHulX3FqDhdF0V4aYFzMOxLV0Yletz5O6aeenu7OAO9i7SM9taiiKAy4ad/KjoTQH3de30xK/UChPZD7chx2FV/ZskWSUWKcVqBbeeijfwOuUqWwGjcYTIBvqQC2pmFaaAUn3hxuHik3TmysEnMMjZ1M4GOp0BIKaWUFvqLAOi1d/jcJpI+4dEM8T7PTLZcy/da3Q9YW4xwbgRFxIDlF4F7j9UURyxJA4AnJCUIkaGJBKbM6T+KKiKr0MCvZ0X9xTZHiMtbKIvj1C+SXyJUU8ryb0XY4SqV60gpcuCzZr9ghdaw/tjxNwm/GqkctZRTZ0DeIyeJCFh51dEqT8ZwNPM79InKt+DPpMKRwtXT0jhEOdGWg== }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
-
-      - name: Upload website assets
-        run: |
-          aws s3 cp index.html s3://inventory-app-vitug-ralph/index.html --content-type text/html
-          if [ -f app.js ]; then
-            aws s3 cp app.js s3://inventory-app-vitug-ralph/app.js --content-type application/javascript
-          fi
+      - name: Copy website to S3
+        run: aws s3 sync . s3://inventory-app-vitug-ralph/index.html --exclude "*" --include "index.html"
