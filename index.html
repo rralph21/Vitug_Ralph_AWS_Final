@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory App</title>
+
+  <!-- CSS (embedded) -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    input {
+      padding: 8px;
+      margin: 5px;
+      width: 150px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Inventory App</h1>
+
+    <!-- Buttons -->
+    <button onclick="loadAllItems()">Load All Items</button>
+
+    <br/>
+
+    <!-- Location filter -->
+    <input id="locationInput" placeholder="Enter location ID" />
+    <button onclick="loadByLocation()">Get By Location</button>
+
+    <hr/>
+
+    <!-- Add Item -->
+    <h3>Add Item</h3>
+    <input id="name" placeholder="Name" />
+    <input id="description" placeholder="Description" />
+    <input id="qty" placeholder="Qty" />
+    <input id="price" placeholder="Price" />
+    <input id="location_id" placeholder="Location ID" />
+    <br/>
+    <button onclick="addItem()">Add Item</button>
+
+    <hr/>
+
+    <!-- Output -->
+    <div id="output"></div>
+  </div>
+
+  <!-- JavaScript (embedded) -->
+  <script>
+    const API_BASE = "https://YOUR-API-ID.execute-api.YOUR-REGION.amazonaws.com/Prod";
+    const output = document.getElementById("output");
+
+    function renderItems(items) {
+      output.innerHTML = "";
+
+      if (!items.length) {
+        output.innerHTML = "<p>No items found.</p>";
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+          <strong>${item.name}</strong><br/>
+          Description: ${item.description}<br/>
+          Qty: ${item.qty}<br/>
+          Price: $${item.price}<br/>
+          Location: ${item.location_id}<br/>
+          ID: ${item.id}
+        `;
+
+        output.appendChild(div);
+      });
+    }
+
+    async function loadAllItems() {
+      try {
+        const res = await fetch(`${API_BASE}/items`);
+        const data = await res.json();
+        renderItems(data);
+      } catch (err) {
+        console.error(err);
+        output.innerHTML = "Error loading items";
+      }
+    }
+
+    async function loadByLocation() {
+      const locationId = document.getElementById("locationInput").value;
+
+      try {
+        const res = await fetch(`${API_BASE}/location/${locationId}`);
+        const data = await res.json();
+        renderItems(data);
+      } catch (err) {
+        console.error(err);
+        output.innerHTML = "Error loading location data";
+      }
+    }
+
+    async function addItem() {
+      const item = {
+        name: document.getElementById("name").value,
+        description: document.getElementById("description").value,
+        qty: parseInt(document.getElementById("qty").value),
+        price: parseFloat(document.getElementById("price").value),
+        location_id: parseInt(document.getElementById("location_id").value)
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/item`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(item)
+        });
+
+        const data = await res.json();
+        alert(data.message || "Item added!");
+
+        loadAllItems(); // refresh list
+      } catch (err) {
+        console.error(err);
+        alert("Error adding item");
+      }
+    }
+  </script>
+</body>
+</html>
