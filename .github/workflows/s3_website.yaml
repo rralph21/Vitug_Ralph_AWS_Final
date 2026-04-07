@@ -3,39 +3,21 @@ name: Deploy Website to S3 Bucket
 on:
   push:
     branches:
-      - main
+      - 'main'
     paths:
-      - index.html
-      - app.js
-      - .github/workflows/s3_website.yaml
-  workflow_dispatch:
-
-permissions:
-  contents: read
+      - 'index.html'
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
+      - uses: actions/checkout@v4
+      - name: Set AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
-
-      - name: Upload website assets
-        run: |
-          aws s3 cp index.html s3://inventory-app-vitug-ralph/index.html --content-type text/html
-          if [ -f app.js ]; then
-            aws s3 cp app.js s3://inventory-app-vitug-ralph/app.js --content-type application/javascript
-          fi
+      - name: Copy website to S3
+        run: aws s3 sync . s3://inventory-app-vitug-ralph/index.html --exclude "*" --include "index.html"

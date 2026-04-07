@@ -1,52 +1,31 @@
-name: Deploy Python Functions to AWS Lambda
+name: Deploy Python functions to AWS Lambda
 
 on:
   push:
     branches:
-      - main
+      - 'main'
     paths:
-      - lambda/**
-      - .github/workflows/lambda_deploy.yaml
-  workflow_dispatch:
-
-permissions:
-  contents: read
+      - 'lambda/get_all_inventory_items/lambda_function.py'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        function:
-          - add_inventory_item
-          - delete_inventory_item
-          - get_all_inventory_items
-          - get_inventory_item
-          - get_location_inventory_items
-
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
+      - name: Set AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
-
-      - name: Package and deploy ${{ matrix.function }}
-        working-directory: ./lambda/${{ matrix.function }}
-        run: |
-          zip -r function.zip lambda_function.py
-          aws lambda update-function-code \
-            --function-name "${{ matrix.function }}" \
-            --zip-file fileb://function.zip \
-            --publish
-          rm -f function.zip
+      - name: Zip the get_all_inventory_items Lambda function
+        run: zip function.zip lambda_function.py
+        working-directory: ./lambda/get_all_inventory_items
+      - name: Update Lambda function code
+        run: aws lambda update-function-code --function-name get_all_inventory_items --zip-file fileb://function.zip --publish
+        working-directory: ./lambda/get_all_inventory_items
+      - name: Cleanup get_all_inventory_items zip
+        run: rm function.zip
+        working-directory: ./lambda/get_all_inventory_items
