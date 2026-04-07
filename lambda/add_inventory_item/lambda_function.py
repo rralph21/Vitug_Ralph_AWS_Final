@@ -1,51 +1,39 @@
 import json
 import boto3
 import os
-import ulid
+import uuid
+from decimal import Decimal
 
 def lambda_handler(event, context):
-    try:
-        body = event.get("body", "{}")
-        data = json.loads(body)
-    except json.JSONDecodeError:
-        return {
-            "statusCode": 400,
-            "body": json.dumps("Invalid JSON format.")
-        }
-
-    required_fields = ["name", "description", "qty", "price", "location_id"]
-    missing_fields = [field for field in required_fields if field not in data]
-
-    if missing_fields:
-        return {
-            "statusCode": 400,
-            "body": json.dumps(f"Missing required field(s): {', '.join(missing_fields)}")
-        }
-
-    table_name = os.getenv("TABLE_NAME", "InventoryApp")
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table(table_name)
+    dynamo = boto3.resource('dynamodb')
+    table = dynamo.Table('InventoryApp')
 
     try:
-        # Generate ULID instead of UUID
-        unique_id = str(ulid.new())
-
-        item = {
-            "id": unique_id,
-            "name": str(data["name"]),
-            "description": str(data["description"]),
-            "qty": int(data["qty"]),
-            "price": float(data["price"]),
-            "location_id": int(data["location_id"])
+        # Handle body parsing - could be string or already parsed dict
+        if 'body' in event:
+            body = event['body']
+            if isinstance(body, str):
+                body = json.loads(body)
+        else:
+            body = event
+        
+        new_item = {
+            'id': str(uuid.uuid4()),
+            'location_id': Decimal(str(body['location_id'])),
+            'name': body['name'],
+            'description': body['description'],
+            'qty': Decimal(str(body['qty'])),
+            'price': Decimal(str(body['price']))
         }
 
-        table.put_item(Item=item)
+        table.put_item(Item=new_item)
 
+        clean_item = json.loads(json.dumps(new_item, default=str))
         return {
             "statusCode": 201,
             "body": json.dumps({
                 "message": "Item added successfully.",
-                "item": item
+                "Item": clean_item
             })
         }
 
