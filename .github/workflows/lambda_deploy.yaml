@@ -5,26 +5,18 @@ on:
     branches:
       - main
     paths:
-      - lambda/**
-      - .github/workflows/lambda_deploy.yaml
-  workflow_dispatch:
-
-permissions:
-  contents: read
+      - 'lambda/**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        shell: bash
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Set AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
