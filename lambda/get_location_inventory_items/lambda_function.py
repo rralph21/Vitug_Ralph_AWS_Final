@@ -8,13 +8,12 @@ def lambda_handler(event, context):
     Get Location Inventory Items
     """
     dynamo = boto3.resource('dynamodb')
-    table = dynamo.Table('Inventory')
+    table = dynamo.Table(os.getenv("TABLE_NAME", "InventoryApp"))
 
     try:
-        # Handle path parameters - could be None or missing
         path_params = event.get('pathParameters') or {}
         location_id = path_params.get('id')
-        
+
         if not location_id:
             return {
                 'statusCode': 400,
@@ -25,7 +24,7 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({'error': 'Missing location_id parameter'})
             }
-        
+
         location_id = int(location_id)
 
         response = table.query(
@@ -40,10 +39,21 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Amz-Security-Token',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
                 'Access-Control-Allow-Methods': 'GET,OPTIONS,POST,DELETE'
             },
             'body': json.dumps(clean_items)
+        }
+
+    except ValueError:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Methods': 'GET,OPTIONS,POST,DELETE'
+            },
+            'body': json.dumps({'error': 'location_id must be a number'})
         }
 
     except Exception as e:
