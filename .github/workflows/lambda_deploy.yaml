@@ -99,3 +99,8 @@ jobs:
       - name: Cleanup get_location_inventory_items zip
         run: rm -f function.zip
         working-directory: ./lambda/get_location_inventory_items
+
+      # -------------------------
+      # Actions
+      
+      # -------------------------
